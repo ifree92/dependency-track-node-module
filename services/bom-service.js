@@ -1,15 +1,14 @@
 const restService = require('./rest-service');
 
-exports.upload = (projectUuid, base64BomFile) => {
+exports.uploadByProjectUUID = (projectUuid, base64BomFile) => {
     const urlPath = '/api/v1/bom';
     const body = {
       'project': projectUuid,
-      'autoCreate': true,
       'bom': base64BomFile
     }
 
     return restService.put(urlPath, body);
-},
+}
 
 exports.upload = (projectName, projectVersion, base64BomFile) => {
     const urlPath = '/api/v1/bom';
@@ -21,7 +20,7 @@ exports.upload = (projectName, projectVersion, base64BomFile) => {
     }
 
     return restService.put(urlPath, body);
-},
+}
 
 exports.isBeingProcessed = (token) => {
   const urlPath = '/api/v1/bom/token/' + token;

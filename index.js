@@ -73,7 +73,7 @@ exports.findings = async(callback) => {
 * Dependency Track
 */
 exports.uploadbom = async() => {
-  const {bomFilepath, projectName, projectVersion, waitUntilBomProcessingComplete, failOnError} = config
+  const { bomFilepath, projectName, projectVersion, waitUntilBomProcessingComplete, failOnError, projectUUID } = config
 
   if (!fs.existsSync(bomFilepath)) {
       throw new Error('Bom file not found.');
@@ -86,7 +86,13 @@ exports.uploadbom = async() => {
   }
 
   const base64BomFile = bomFileBuffer.toString('base64');
-  const response = await bomService.upload(projectName, projectVersion, base64BomFile);
+  let response;
+  if (projectUUID) {
+    response = bomService.uploadByProjectUUID(projectUUID, base64BomFile);
+  } else {
+    response = await bomService.upload(projectName, projectVersion, base64BomFile);
+  }
+
   const {token} = response;
 
   let isBeingProcessed = true;
@@ -109,4 +115,60 @@ exports.deleteProject = async() => {
   }
 
   return await projectService.deleteByUuid(project.uuid);
+}
+
+/**
+ * This function creates a project if "projectUUID" is not provided, otherwise it updates the project
+ * @returns {Promise<string>}
+ */
+exports.createProject = async () => {
+  const {
+    projectPURL,
+    projectVersion,
+    projectName,
+    projectGroup,
+    projectDescription,
+    projectClassifier,
+    projectTags,
+  } = config;
+
+  console.log('config', config);
+
+  let projectUUID = config.projectUUID;
+  const projectTagList = projectTags?.split(',').map((tag) => tag.trim()).filter((tag) => !!tag);
+
+  if (!projectUUID) {
+    try {
+      console.log('start finding');
+      const data = await projectService.findByNameAndVersion(projectName, projectVersion);
+      console.log('FOUND:', data);
+      projectUUID = data.uuid;
+    } catch (e) {}
+  }
+
+  if (projectUUID) {
+    await projectService.updateProject({
+      uuid: projectUUID,
+      group: projectGroup,
+      name: projectName,
+      description: projectDescription,
+      version: projectVersion,
+      classifier: projectClassifier,
+      purl: projectPURL,
+      tags: projectTagList,
+    });
+  } else {
+    const createdProject = await projectService.createProject({
+      group: projectGroup,
+      name: projectName,
+      description: projectDescription,
+      version: projectVersion,
+      classifier: projectClassifier,
+      purl: projectPURL,
+      tags: projectTagList,
+    });
+    projectUUID = createdProject.uuid;
+  }
+
+  return projectUUID;
 }

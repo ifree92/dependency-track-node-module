@@ -9,9 +9,20 @@ const dependencyTrack = require("../index");
 const fs = require("fs");
 const path = require("path");
 
-const ARGS_WHITELIST = ["-h", "-u", "-d", "-f", "-m", "-s", "--version"]
-const CONFIGS_WHITELIST = ["--apiKey", "--dependencyTrackBaseUrl",
-"--projectName", "--projectVersion", "--failOnError"]
+const ARGS_WHITELIST = ["-h", "-u", "-cp", "-d", "-f", "-m", "-s", "--version"]
+const CONFIGS_WHITELIST = [
+    "--apiKey",
+    "--dependencyTrackBaseUrl",
+    "--projectName",
+    "--projectVersion",
+    "--projectUUID",
+    "--projectClassifier",
+    "--projectDescription",
+    "--projectTags",
+    "--projectGroup",
+    "--projectPURL",
+    "--failOnError",
+];
 
 let arguments = process.argv.slice(2);
 
@@ -21,6 +32,13 @@ config.apiKey = loadConfig("--apiKey", arguments) || config.apiKey;
 config.baseUrl = loadConfig("--dependencyTrackBaseUrl", arguments) || config.baseUrl;
 config.projectName = loadConfig("--projectName", arguments) || config.projectName;
 config.projectVersion = loadConfig("--projectVersion", arguments) || config.projectVersion;
+config.projectUUID = loadConfig("--projectUUID", arguments) || config.projectUUID;
+config.projectClassifier = loadConfig("--projectClassifier", arguments) || config.projectClassifier;
+config.projectDescription = loadConfig("--projectDescription", arguments) || config.projectDescription;
+config.projectTags = loadConfig("--projectTags", arguments) || config.projectTags;
+config.projectGroup = loadConfig("--projectGroup", arguments) || config.projectGroup;
+config.projectPURL = loadConfig("--projectPURL", arguments) || config.projectPURL;
+config.projectUpdateIfExist = loadConfig("--projectUpdateIfExist", arguments)?.toLowerCase() === 'true' || config.projectUpdateIfExist;
 config.failOnError = loadConfig("--failOnError", arguments) || config.failOnError || false;
 
 // OPTIONS ---------------------------------------------------------------------
@@ -37,6 +55,7 @@ new ActionMenu(arguments).help(() => {
        console.log("Options:");
        console.log("  -h        - this help");
        console.log("  -u        - upload the bom");
+       console.log("  -cp       - create or update a project");
        console.log("  -d        - delete, delete the current or any arbitrary project from the server");
        console.log("  -f        - findings, prints out some details of all of the current issues found in the scan");
        console.log("  -m        - metrics, Get and print all metrics from the server");
@@ -50,6 +69,9 @@ new ActionMenu(arguments).help(() => {
     config.bomFilepath = arguments[idx + 1] || config.bomFilepath;
     await dependencyTrack.uploadbom();
     console.log("Bom file uploaded")
+}).when('-cp', async () => {
+    const projectUUID = await dependencyTrack.createProject();
+    console.log(projectUUID);
 }).when("-d", async() => {
     await dependencyTrack.deleteProject();
     console.log(`Project [${config.projectName} - ${config.projectVersion}] has been deleted`)
