@@ -132,16 +132,12 @@ exports.createProject = async () => {
     projectTags,
   } = config;
 
-  console.log('config', config);
-
   let projectUUID = config.projectUUID;
   const projectTagList = projectTags?.split(',').map((tag) => tag.trim()).filter((tag) => !!tag);
 
   if (!projectUUID) {
     try {
-      console.log('start finding');
       const data = await projectService.findByNameAndVersion(projectName, projectVersion);
-      console.log('FOUND:', data);
       projectUUID = data.uuid;
     } catch (e) {}
   }

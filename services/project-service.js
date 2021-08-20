@@ -68,7 +68,5 @@ exports.updateProject = (opts) => {
         tags: opts.tags?.map((name) => ({ name })),
     }
 
-    console.log('body', body);
-
     return restService.post(urlPath, body);
 }
